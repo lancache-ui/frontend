@@ -1,0 +1,36 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# ---> VisualStudioCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Local History for Visual Studio Code
+.history/
+
+# Dependency directories
+node_modules
+
+# Svelte-Kit compilation
+/build
+/.svelte-kit
+/package
+
+# dotenv environment variables file
+.env
+.env.*
+!.env.example
+
+# Not sure if the following should be ignored.
+# vite.config.ts.timestamp*
+
