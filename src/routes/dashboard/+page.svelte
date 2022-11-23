@@ -10,20 +10,12 @@
 
   let activeGames = writable([])
 
-  function subTotalReqs() {
+  function gql(query: string, cb: Function) {
     const url = new URL('http://100.123.231.77:3000/api')
 
     url.searchParams.append(
       'query',
-      /* GraphQL */ `
-        subscription {
-          stats {
-            totalReqs
-            totalHits
-            totalMisses
-          }
-        }
-      `,
+      query,
     )
 
     const eventsource = new EventSource(url.href, {
@@ -33,25 +25,54 @@
     eventsource.onmessage = (event) => {
       const eData = JSON.parse(event.data)
       const data = eData.data
-
-      const stats = data.stats
-
-      totalReqs.set(stats.totalReqs.toLocaleString('en-US'))
-      addGlow()
-
-      const totalHitRatio = Math.round( (stats.totalHits / stats.totalReqs) * 100 )
-      const totalMissRatio = Math.round( (stats.totalMisses / stats.totalReqs) * 100 )
-
-      totalHits.set(totalHitRatio)
-      totalMisses.set(totalMissRatio)
+      cb(data)
     }
   }
 
-  function subActiveGames() {
-    const url = new URL('http://100.123.231.77:3000/api')
+  function parseStats(stats: { totalReqs: any; totalHits: number; totalMisses: number; }) {
+    console.log('Parsing stats:')
+    console.log(stats)
 
-    url.searchParams.append(
-      'query',
+    totalReqs.set(stats.totalReqs.toLocaleString('en-US'))
+    addGlow()
+
+    // TODO: consider using `.toFixed(2) for the code below, as pointed out by Discord user `pingger`
+    // https://stackoverflow.com/questions/661562/how-to-format-a-float-in-javascript/661579#661579
+    // https://stackoverflow.com/questions/566564/math-roundnum-vs-num-tofixed0-and-browser-inconsistencies
+    // After researching just a tad, Math.round appears to be more reliable across browsers.
+
+    // Nothing to compute.
+    if (!stats.totalReqs || stats.totalReqs < 1) {
+      totalHits.set(0)
+      totalMisses.set(0)
+      return
+    }
+
+    const totalHitRatio = Math.round( (stats.totalHits / stats.totalReqs) * 100 )
+    const totalMissRatio = Math.round( (stats.totalMisses / stats.totalReqs) * 100 )
+
+    totalHits.set(totalHitRatio)
+    totalMisses.set(totalMissRatio)
+  }
+
+  function subStats() {
+    gql(
+      /* GraphQL */ `
+        subscription {
+          stats {
+            totalReqs
+            totalHits
+            totalMisses
+          }
+        }
+      `, (data: { stats: any; }) => {
+        const stats = data.stats
+        parseStats(stats)
+      })
+  }
+
+  function subActiveGames() {
+    gql(
       /* GraphQL */ `
         subscription {
           active {
@@ -61,21 +82,11 @@
             content
           }
         }
-      `,
-    )
-
-    const eventsource = new EventSource(url.href, {
-      withCredentials: true, // This is required for cookies
-    })
-
-    eventsource.onmessage = (event) => {
-      const eData = JSON.parse(event.data)
-      const data = eData.data
-
-      const games = data.active
-      //$activeGames = games
-      activeGames.set(games)
-    }
+      `, (data: { active: any; }) => {
+        const games = data.active
+        //$activeGames = games
+        activeGames.set(games)
+      })
   }
 
   onMount(async () => {
@@ -108,25 +119,11 @@
 
     const stats = data.stats
     const games = data.active
-    //$activeGames = games
+
+    parseStats(stats)
     activeGames.set(games)
 
-    totalReqs.set(stats.totalReqs.toLocaleString('en-US'))
-    addGlow()
-
-    // TODO: consider using `.toFixed(2) for the code below, as pointed out by Discord user `pingger`
-    // https://stackoverflow.com/questions/661562/how-to-format-a-float-in-javascript/661579#661579
-    // https://stackoverflow.com/questions/566564/math-roundnum-vs-num-tofixed0-and-browser-inconsistencies
-    // After researching just a tad, Math.round appears to be more reliable across browsers.
-
-    const totalHitRatio = Math.round( (stats.totalHits / stats.totalReqs) * 100 )
-    const totalMissRatio = Math.round( (stats.totalMisses / stats.totalReqs) * 100 )
-
-    totalHits.set(totalHitRatio)
-    totalMisses.set(totalMissRatio)
-
-
-    subTotalReqs()
+    subStats()
     subActiveGames()
   })
 
@@ -137,19 +134,6 @@
     glower?.classList.add("glow")
     setTimeout(() => glower?.classList.remove("glow"), 1000)
   }
-
-  const incomingGames = [
-    {
-      id: 0,
-      name: 'Heave Ho',
-      type: '',
-
-      parent: '',
-    },
-    {
-      name: 'Spiritfarer',
-    }
-  ]
 
   const topGames = [
     {
