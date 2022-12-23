@@ -4,14 +4,36 @@
   import { onMount } from 'svelte'
   import { writable } from 'svelte/store';
 
+  const serviceURL = 'http://100.123.231.77:3002'
+
   let totalReqs = writable(0)
   let totalHits = writable(0)
   let totalMisses = writable(0)
 
   let activeGames = writable([])
+  let topGames = writable([])
+
+  /*topGames.set([
+    {
+      id: 860950,
+      name: 'Mark of the Ninja: Remastered',
+      content: 'Mark of the Ninja Remastered Content - Linux',
+      //header: 'https://cdn.cloudflare.steamstatic.com/steam/apps/860950/header.jpg?t=1663024204',
+    },
+    {
+      id: 322330,
+      name: 'Don\'t Starve Together',
+      content: 'Don\'t Starve Together - Windows',
+    },
+    {
+      id: 15750,
+      name: 'Oddworld: Stranger\'s Wrath HD',
+      content: 'Stranger-Depot',
+      //header: 'https://cdn.cloudflare.steamstatic.com/steam/apps/15750/header.jpg?t=1663421409',
+    }])*/
 
   function gql(query: string, cb: Function) {
-    const url = new URL('http://100.123.231.77:3000/api')
+    const url = new URL(`${serviceURL}/api`)
 
     url.searchParams.append(
       'query',
@@ -36,17 +58,17 @@
     totalReqs.set(stats.totalReqs.toLocaleString('en-US'))
     addGlow()
 
-    // TODO: consider using `.toFixed(2) for the code below, as pointed out by Discord user `pingger`
-    // https://stackoverflow.com/questions/661562/how-to-format-a-float-in-javascript/661579#661579
-    // https://stackoverflow.com/questions/566564/math-roundnum-vs-num-tofixed0-and-browser-inconsistencies
-    // After researching just a tad, Math.round appears to be more reliable across browsers.
-
     // Nothing to compute.
     if (!stats.totalReqs || stats.totalReqs < 1) {
       totalHits.set(0)
       totalMisses.set(0)
       return
     }
+
+    // Consider using `.toFixed(2) for the code below, as pointed out by Discord user `pingger`
+    // https://stackoverflow.com/questions/661562/how-to-format-a-float-in-javascript/661579#661579
+    // https://stackoverflow.com/questions/566564/math-roundnum-vs-num-tofixed0-and-browser-inconsistencies
+    // After researching just a tad, Math.round appears to be more reliable across browsers.
 
     const totalHitRatio = Math.round( (stats.totalHits / stats.totalReqs) * 100 )
     const totalMissRatio = Math.round( (stats.totalMisses / stats.totalReqs) * 100 )
@@ -92,7 +114,7 @@
   onMount(async () => {
 
     // Hydrate page info before subscriptions take over.
-    const url = new URL('http://100.123.231.77:3000/api')
+    const url = new URL(`${serviceURL}/api`)
 
     url.searchParams.append(
       'query',
@@ -135,7 +157,7 @@
     setTimeout(() => glower?.classList.remove("glow"), 1000)
   }
 
-  const topGames = [
+  /*const topGames = [
     {
       id: 860950,
       name: 'Mark of the Ninja: Remastered',
@@ -153,7 +175,7 @@
       content: 'Stranger-Depot',
       //header: 'https://cdn.cloudflare.steamstatic.com/steam/apps/15750/header.jpg?t=1663421409',
     }
-  ]
+  ]*/
 </script>
 
 <section class="h-full">
@@ -195,7 +217,6 @@
         - active games
         - top games - most hits by children depots (as long as child isn't MULTI)
         - largest games (by depot size)
-        - //most saved bandwidth games (implied by top games)
       -->
 
       <!-- <div class="flex-grid" style="display: flex;"> -->
@@ -209,7 +230,7 @@
             <center>Active</center>
 
             <!-- TODO: Empty card for No Games Active -->
-            {#each $activeGames as game }
+            {#each $activeGames as game } <!-- as game: GameInfo -->
               <GameCard id={ game.id } game={ game }/>
             {/each}
 
@@ -218,7 +239,7 @@
           <ul class="divide-y divide-gray-200">
             <center>Top</center>
 
-            {#each topGames as game }
+            {#each $topGames as game }
               <GameCard id={ game.id } game={ game }/>
             {/each}
           </ul>
