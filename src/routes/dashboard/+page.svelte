@@ -4,7 +4,7 @@
   import { onMount } from 'svelte'
   import { writable } from 'svelte/store';
 
-  const serviceURL = 'http://100.123.231.77:3002'
+  const serviceURL = 'http://10.88.20.1:3002'
 
   let totalReqs = writable(0)
   let totalHits = writable(0)
