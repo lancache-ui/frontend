@@ -6,10 +6,10 @@ jobs:
   generate_version_number:
     runs-on: ubuntu-latest
     outputs:
-      build_number: ${{ github.ref == 'refs/heads/master' && steps.buildnumber.outputs.build_number || 1 }}
+      build_number: ${{ github.ref == 'refs/heads/main' && steps.buildnumber.outputs.build_number || 1 }}
     steps:
     - name: Generate build number
-      if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/main'
       id: buildnumber
       uses: einaregilsson/build-number@v3
       with:
@@ -44,4 +44,4 @@ jobs:
       run: |
         export VERSION=1.0.${{needs.generate_version_number.outputs.build_number}}
         echo Version: $VERSION
-        docker buildx build -f Dockerfile --build-arg BUILD_VERSION=$VERSION --platform linux/arm,linux/arm64,linux/amd64 -t devedse/lancacheui_frontend:${{needs.generate_version_number.outputs.build_number}} -t devedse/lancacheui_frontend:latest ${{ github.ref == 'refs/heads/master' && '--push' || '' }} .
+        docker buildx build -f Dockerfile --build-arg BUILD_VERSION=$VERSION --platform linux/arm,linux/arm64,linux/amd64 -t devedse/lancacheui_frontend:${{needs.generate_version_number.outputs.build_number}} -t devedse/lancacheui_frontend:latest ${{ github.ref == 'refs/heads/main' && '--push' || '' }} .
